@@ -4,6 +4,7 @@ namespace backend\controllers;
 
 use backend\models\Lesson;
 use common\models\LoginForm;
+use \yii\base\Exception;
 use Yii;
 use yii\filters\AccessControl;
 use yii\filters\VerbFilter;
@@ -29,7 +30,7 @@ class SiteController extends Controller
                         'allow' => true,
                     ],
                     [
-                        'actions' => ['logout', 'index', 'lesson'],
+                        'actions' => ['logout', 'index', 'lesson', 'complete-lesson'],
                         'allow' => true,
                         'roles' => ['@'],
                     ],
@@ -63,9 +64,13 @@ class SiteController extends Controller
      */
     public function actionIndex()
     {
-        $lessonModel = new Lesson();
-        $lessons = $lessonModel->find()->asArray()->all();
-        return $this->render('index', ['lessons' => $lessons]);
+        $lessons = Lesson::find()->asArray()->all();
+        $completed = true;
+        $uncompletedLessons = array_filter($lessons, function ($lesson) {
+            return $lesson['status'] == 0;
+        });
+        $completed = count($uncompletedLessons) === 0;
+        return $this->render('index', ['lessons' => $lessons, 'completed' => $completed]);
     }
 
     /**
@@ -112,5 +117,18 @@ class SiteController extends Controller
         }
         $lesson = Lesson::find()->where(['id' => $id])->asArray()->one();
         return $this->render('lesson', ['lesson' => $lesson]);
+    }
+
+    public function actionCompleteLesson() {
+        if (Yii::$app->request->isAjax) {
+            $id = Yii::$app->request->getBodyParam('id');
+            $lesson = Lesson::findOne(['id' => $id]);
+            $lesson->status = 1;
+            if ($lesson->save()) {
+                return json_encode(['message' => 'ok']);
+            } else {
+                throw new Exception('Error on update');
+            }
+        }
     }
 }

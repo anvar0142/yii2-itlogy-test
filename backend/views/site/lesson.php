@@ -13,7 +13,17 @@
 $script = <<< JS
 $(document).ready(function(){
     $('#complete-btn').click(function(){
-        $.ajax('')
+        $.ajax({
+            url: '/admin/site/complete-lesson',
+            type: 'POST',
+            data: {id: $_GET[id]},
+            success: function(){
+                window.location.replace('/admin')
+            },
+            error: function(){
+                alert('Error!');
+            }
+        });
     });
 }); 
 JS;
